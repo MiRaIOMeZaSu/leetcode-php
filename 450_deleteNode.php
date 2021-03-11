@@ -193,24 +193,33 @@ class Solution
         while ($target->left != null || $target->right != null) {
             if ($target->right == null) {
                 // 只有右子树为空
-                $repl = $target->left;
-                $parenArr = $this->exchPos($target, $target->left, $targetParen, $target);
-                $targetParen = $parenArr[0];
+                if ($root == $target) {
+                    return $target->left;
+                }else{
+                    $repl = $target->left;
+                    if ($targetParen->left == $target) {
+                        $targetParen->left = $repl;
+                    } elseif ($targetParen->right == $target) {
+                        $targetParen->right = $repl;
+                    }
+                    return $root;
+                }
+//                $repl = $target->left;
+//                $parenArr = $this->exchPos($target, $target->left, $targetParen, $target);
+//                $targetParen = $parenArr[0];
+
+
                 // 此处的做法是正确的
-            } elseif ($target->left == null) {
-                // 只有左子树为空
-                $repl = $target->right;
-                $parenArr = $this->exchPos($target, $target->right, $targetParen, $target);
-                $targetParen = $parenArr[0];
             } else {
-                // 任一子树均不为空,此时寻找右子树最小节点或左子树最大结点
+                // 右子树不为空
+                // 当右子树的左子树不为空,寻找右子树最小
                 $arr2 = $this->findMin($target->right, $target);
                 // min与target交换位置
                 $repl = $arr2[0];
                 $replParent = $arr2[1];
                 $parenArr = $this->exchPos($target, $repl, $targetParen, $replParent);
                 $targetParen = $parenArr[0];
-//                $replParent = $parenArr[1];
+//                  $replParent = $parenArr[1];
                 if ($root == $target) {
                     $root = $repl;
                 }
@@ -237,5 +246,5 @@ $root->right = new TreeNode(6);
 $root->right->right = new TreeNode(7);
 
 $solution = new Solution();
-$result = $solution->deleteNode($root, 3);
+$result = $solution->deleteNode($root, 5);
 echo $result->val;
