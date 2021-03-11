@@ -49,6 +49,69 @@ class Solution
         }
         return $this->findNode($root->right, $target, $root);
     }
+
+    function exchPos($target, $repl, $targetParen = null, $replParen = null)
+    {
+        // target必须在repl上面
+        $targetL = $target->left;
+        $targetR = $target->right;
+        $replL = $repl->left;
+        $replR = $repl->right;
+        if ($targetL == $repl) {
+            // 更改parent的一个指针
+            if ($targetParen) {
+                if ($targetParen->left == $target) {
+                    $targetParen->left = $repl;
+                } elseif ($targetParen->right == $target) {
+                    $targetParen->right = $repl;
+                }
+            }
+            // 更改repl的两个指针
+            $repl->left = $target;
+            $repl->right = $targetR;
+            // 更改target的两个指针
+            $target->left = $replL;
+            $target->right = $replR;
+            return [$repl, $targetParen];
+        } elseif ($targetR == $repl) {
+            // 更改parent的一个指针
+            if ($targetParen) {
+                if ($targetParen->left == $target) {
+                    $targetParen->left = $repl;
+                } elseif ($targetParen->right == $target) {
+                    $targetParen->right = $repl;
+                }
+            }
+            // 更改repl的两个指针
+            $repl->left = $targetL;
+            $repl->right = $target;
+            // 更改target的两个指针
+            $target->left = $replL;
+            $target->right = $replR;
+            return [$repl, $targetParen];
+        } else {
+            // 此时替换与被替换不相连
+            if ($targetParen) {
+                if ($targetParen->left == $target) {
+                    $targetParen->left = $repl;
+                } elseif ($targetParen->right == $target) {
+                    $targetParen->right = $repl;
+                }
+            }
+            if ($replParen->left == $repl) {
+                $replParen->left = $target;
+            } elseif ($replParen->right == $repl) {
+                $replParen->right = $target;
+            }
+            // 更改repl的两个指针
+            $repl->left = $targetL;
+            $repl->right = $targetR;
+            // 更改target的两个指针
+            $target->left = $replL;
+            $target->right = $replR;
+            return [$replParen, $targetParen];
+        }
+    }
     /*
     function sink($root, $parent)
     {
@@ -117,137 +180,54 @@ class Solution
         $arr = $this->findNode($root, $key);
         $target = $arr[0];
         if (!$target) {
+            // 如果没找到,原样返回
             return $root;
         }
-        $parent = $arr[1];
-        if ($parent == null && $target->left == null && $target->right == null) {
+        $targetParen = $arr[1];
+        if ($targetParen == null && $target->left == null && $target->right == null) {
+            // 删除唯一的元素
             return null;
         }
-        $new = null;
-        $newRoot = $root;
-        if($root==$target){
-            if($target->left == null || $target->right == null){
-                $flag= true;
-            }
-        }
+        // fixme
+        $parenArr = null;
         while ($target->left != null || $target->right != null) {
             if ($target->right == null) {
                 // 只有右子树为空
-                $new = $target->left;
-                $target->left = null;
-                if ($parent) {
-                    // 如果存在父节点
-                    if ($parent->left == $target) {
-                        $parent->left = $new;
-                    } elseif ($parent->right == $target) {
-                        $parent->right = $new;
-                    }
-                }
-                break;
+                $repl = $target->left;
+                $parenArr = $this->exchPos($target, $target->left, $targetParen, $target);
+                $targetParen = $parenArr[0];
+                // 此处的做法是正确的
             } elseif ($target->left == null) {
                 // 只有左子树为空
-                $new = $target->right;
-                $target->right = null;
-                if ($parent) {
-                    // 如果存在父节点
-                    if ($parent->left == $target) {
-                        $parent->left = $new;
-                    } elseif ($parent->right == $target) {
-                        $parent->right = $new;
-                    }
-                }
-                break;
-            }
-            // 任一子树均不为空,此时寻找右子树最小节点或左子树最大结点
-            $arr2 = $this->findMin($target->right, $target);
-            // min与target交换位置
-            $new = $arr2[0];
-            if ($target == $root) {
-                $newRoot = $new;
-            }
-            $left = $new->left;
-            $right = $new->right;
-            $minParent = $arr2[1];
-            if ($minParent != $target) {
-                // 最小结点就是target右子树
-                // $new = $target->right;
-                $new->left = $target->left;
-                $new->right = $target->right;
-                // 原来的parents:
-                if ($minParent) {
-                    // 如果存在父节点
-                    if ($minParent->left == $new) {
-                        $minParent->left = null;
-                    } else {
-                        $minParent->right = null;
-                    }
-                }
+                $repl = $target->right;
+                $parenArr = $this->exchPos($target, $target->right, $targetParen, $target);
+                $targetParen = $parenArr[0];
             } else {
-                // $new = $target->right;
-
-                $new->left = $target->left;
-                $new->right = $target;
-                if (!$parent) {
-                    $parent = $new;
-                }else{
-                    // 如果存在父节点
-                    if ($parent->left == $target) {
-                        $parent->left = $new;
-                    } elseif ($parent->right == $target) {
-                        $parent->right = $new;
-                    }
-                }
-                if($right != null || $right != null){
-                    $parent = $new;
+                // 任一子树均不为空,此时寻找右子树最小节点或左子树最大结点
+                $arr2 = $this->findMin($target->right, $target);
+                // min与target交换位置
+                $repl = $arr2[0];
+                $replParent = $arr2[1];
+                $parenArr = $this->exchPos($target, $repl, $targetParen, $replParent);
+                $targetParen = $parenArr[0];
+//                $replParent = $parenArr[1];
+                if ($root == $target) {
+                    $root = $repl;
                 }
             }
-            $target->right = $right;
-            $target->left = $left;
         }
-
-        // 如果存在父节点
-        if ($new->left == $target) {
-            $new->left = null;
-        } elseif ($new->right == $target) {
-            $new->right = null;
-        }
-        if ($parent) {
-            // 如果存在父节点
-            if ($parent->left == $target) {
-                $parent->left = $new;
-            } elseif ($parent->right == $target) {
-                $parent->right = $new;
+        if ($targetParen) {
+            if ($targetParen->left == $target) {
+                $targetParen->left = null;
+            } elseif ($targetParen->right == $target) {
+                $targetParen->right = null;
             }
         }
-
-        if ($root == $target) {
-            if($flag){
-                return $new;
-            }
-            return $newRoot;
-        } else {
-            return $root;
-        }
+        return $root;
     }
 }
 
-$root = new TreeNode();
-$root->val = 1;
-$root->right = new TreeNode(2);
-//$root->right->left = new TreeNode(6);
-//$root->right->left->left = new TreeNode(5);
-//$root->right->right = new TreeNode(8);
-//$root->right->right->right = new TreeNode(9);
 
-
-//$root = new TreeNode();
-//$root->val = 0;
-//$root->left = new TreeNode(3);
-//$root->left->left = new TreeNode(2);
-//$root->left->right = new TreeNode(4);
-//$root->right = new TreeNode(6);
-//$root->right->right = new TreeNode(7);
-/*
 $root = new TreeNode();
 $root->val = 5;
 $root->left = new TreeNode(3);
@@ -255,16 +235,7 @@ $root->left->left = new TreeNode(2);
 $root->left->right = new TreeNode(4);
 $root->right = new TreeNode(6);
 $root->right->right = new TreeNode(7);
-*/
-/*
-$root->val = 50;
-$root->left = new TreeNode(30);
-//$root->left->left = new TreeNode(2);
-$root->left->right = new TreeNode(40);
-$root->right = new TreeNode(70);
-$root->right->left = new TreeNode(60);
-$root->right->right = new TreeNode(80);
-*/
+
 $solution = new Solution();
-$result = $solution->deleteNode($root, 1);
+$result = $solution->deleteNode($root, 3);
 echo $result->val;
