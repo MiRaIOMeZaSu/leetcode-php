@@ -1,45 +1,90 @@
 <?php
 
+/*
+ class TreeNode
+{
+    public $val = null;
+    public $left = null;
+    public $right = null;
+
+    function __construct($val = 0, $left = null, $right = null)
+    {
+        $this->val = $val;
+        $this->left = $left;
+        $this->right = $right;
+    }
+}
+*/
+
+class DuNode
+{
+    public $val = null;
+    public $front = null;
+    public $back = null;
+
+    function __construct($val = 0, $front = null, $back = null)
+    {
+        $this->val = $val;
+        $this->$front = $front;
+        $this->$back = $back;
+    }
+}
+
 class Queue
 {
-    var $arr;
+    var $head;
+    var $tail;
 
     function __construct()
     {
-        $this->arr = array();
+        $this->head = new DuNode(-INF);
+        $this->tail = new DuNode(-INF);
+        $this->head->back = $this->tail;
+        $this->tail->front = $this->head;
     }
 
-    function push($e)
+    function push($val)
     {
-        $this->arr[] = $e;
+        $e = new DuNode($val);
+        $front = $this->tail->front;
+        $this->tail->front = $e;
+        $front->back = $e;
+        $e->front = $front;
+        $e->back = $this->tail;
     }
 
     function max()
     {
-        return $this->arr[0];
+        return $this->head->back->val;
     }
 
     function pop()
     {
-        $this->arr = array_slice($this->arr, 1);
+        $newMax = $this->head->back->back;
+        $this->head->back = $newMax;
+        $newMax->front = $this->head;
     }
 
-    function size()
+    function isEmpty()
     {
-        return count($this->arr);
+        return $this->head->back == $this->tail;
     }
 
     function end()
     {
-        return $this->arr[count($this->arr) - 1];
+        return $this->tail->front->val;
     }
 
     function removEnd()
     {
-        $this->arr = array_slice($this->arr, 0, count($this->arr) - 1);
+        $newEnd = $this->tail->front->front;
+        $this->tail->front = $newEnd;
+        $newEnd->back = $this->tail;
     }
-    function remove($e){
-        if($this->max()==$e){
+
+    function remove($val)
+    {
+        if ($this->max() == $val) {
             $this->pop();
         }
     }
@@ -60,14 +105,14 @@ class Solution
         $result = array();
         $window = new Queue();
         for ($i = 0; $i < $k; $i++) {
-            while ($window->size() > 0 && $window->end() < $nums[$i]) {
+            while (!$window->isEmpty() && $window->end() < $nums[$i]) {
                 $window->removEnd();
             }
             $window->push($nums[$i]);
         }
         $result[] = $window->max();
         for ($i = $k; $i < count($nums); $i++) {
-            while ($window->size() > 0 && $window->end() < $nums[$i]) {
+            while (!$window->isEmpty() && $window->end() < $nums[$i]) {
                 $window->removEnd();
             }
             $window->remove($nums[$i - $k]);
@@ -80,5 +125,5 @@ class Solution
 
 // 执行
 $solution = new Solution();
-$result = $solution->maxSlidingWindow([1,-1], 1);
+$result = $solution->maxSlidingWindow([1, -1], 1);
 echo $result[0];
